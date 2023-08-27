@@ -14,6 +14,10 @@ from tensorflow.keras.layers import LSTM, Dense, Dropout,Flatten
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 import tensorflow as tf
 from keras import backend as K
+# from xgboost import XGBClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score
 import csv
 import time
 import random
@@ -235,8 +239,7 @@ def model_plot(model_history, type = None, plot_all = True):
     plt.show()
 #=============================================================================================================================================
 
-#LSTM - model 1
-def lstm_model1(x,y,max_route_length):
+def encoder(x,y):
     # Encode the target variable
     label_encoder = LabelEncoder()
     labels_encoded = label_encoder.fit_transform(y)
@@ -247,9 +250,13 @@ def lstm_model1(x,y,max_route_length):
     # random_state - Selects regular examples for training and testing in all running.
     X_train, X_test, y_train, y_test = train_test_split(x, labels_encoded, test_size=0.2,
                                                         random_state=42)
-
     # y_train, y_test = oneHotEndcoding(y_train, y_test)
+    return X_train, X_test, y_train, y_test
 
+
+
+#LSTM - model 1
+def lstm_model1(X_train, X_test, y_train, y_test,max_route_length):
     # Experiment 1: hidden_layers = 1, total_nodes = 64
     # Define the LSTM model
     model = Sequential()
@@ -373,6 +380,20 @@ def creating_synthetic_track_database():
         vehicle_data[f'vehicle_{vehicle_id}'] = has_accident
     write_to_csv('combined_vehicle_tracks.csv', combined_route_points)
 
+
+def xgboost_model(x, y):
+    seed = 42
+    test_size = 0.3
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=seed)
+    model = XGBClassifier(subsample=0.5, learning_rate=0.1, max_depth=4)
+    model.fit(X_train, y_train)
+    print(model)
+    y_pred = model.predict(X_test)
+    print(y_pred)
+    accuracy = accuracy_score(y_test, y_pred)
+    print("Accuracy: %.2f%%" % (accuracy * 100.0))
+
+
 if __name__ == '__main__':
     creating_synthetic_track_database()
     data_frame = import_data()
@@ -383,4 +404,6 @@ if __name__ == '__main__':
     x,max_route_length = reshape_tracks(df_modified)
     y = read_y(df_modified)
     is_balanced_database(df_modified)
-    lstm_model1(x,y,max_route_length)
+    X_train, X_test, y_train, y_test = encoder(x,y)
+    lstm_model1(X_train, X_test, y_train, y_test,max_route_length)
+    # xgboost_model(X_train, X_test, y_train, y_test)
