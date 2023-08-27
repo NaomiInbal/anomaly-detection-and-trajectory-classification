@@ -1,22 +1,15 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+from xgboost import XGBClassifier
 import numpy as np
-import random
 from sklearn.preprocessing import MinMaxScaler
-import seaborn as sns
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-import ast
-import tensorflow as tf
-import keras
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout,Flatten
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 import tensorflow as tf
 from keras import backend as K
-# from xgboost import XGBClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
 from sklearn.metrics import accuracy_score
 import csv
 import time
@@ -244,12 +237,15 @@ def encoder(x,y):
     label_encoder = LabelEncoder()
     labels_encoded = label_encoder.fit_transform(y)
     labels_encoded = labels_encoded.reshape((len(y), 1))
-
     # Pad sequences to ensure consistent length
     # test_size - determines the percentage division into test and train.
     # random_state - Selects regular examples for training and testing in all running.
     X_train, X_test, y_train, y_test = train_test_split(x, labels_encoded, test_size=0.2,
                                                         random_state=42)
+    print("encoder shape(X_train) = ", X_train.shape)
+    print("encoder shape(y_train) = ", y_train.shape)
+    print("encoder shape(X_train) = ", X_test.shape)
+    print("encoder shape(y_train) = ", y_test.shape)
     # y_train, y_test = oneHotEndcoding(y_train, y_test)
     return X_train, X_test, y_train, y_test
 
@@ -372,24 +368,32 @@ def creating_synthetic_track_database():
     combined_route_points = []
 
     vehicle_data = {}  # Dictionary to store vehicle data
-    for vehicle_id in range(1, 1500):  # Create 5 different vehicle tracks
+    for vehicle_id in range(1,1500):  # Create 5 different vehicle tracks
         has_accident = random.random() < 0.2  # 50% probability of having an accident
         route_points = generate_route_points(num_points, distance_increment, noisy_points, has_accident, f'vehicle_{vehicle_id}')
         combined_route_points.extend(route_points)
 
         vehicle_data[f'vehicle_{vehicle_id}'] = has_accident
+    # Check if a vehicle has an accident, then update all rows for that vehicle
+    for vehicle_id, has_accident in vehicle_data.items():
+        if has_accident:
+            for i in range(len(combined_route_points)):
+                if combined_route_points[i][4] == vehicle_id:
+                    combined_route_points[i] = (combined_route_points[i][0], combined_route_points[i][1],
+                                               combined_route_points[i][2], 1, vehicle_id)
     write_to_csv('combined_vehicle_tracks.csv', combined_route_points)
 
 
-def xgboost_model(x, y):
-    seed = 42
-    test_size = 0.3
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=seed)
+def xgboost_model(X_train, X_test, y_train, y_test):
     model = XGBClassifier(subsample=0.5, learning_rate=0.1, max_depth=4)
+    X_train = X_train.reshape(X_train.shape[0], -1)
+    X_test = X_test.reshape(X_test.shape[0], -1)
+    print("=======================================X_train.shape",X_train.shape)
     model.fit(X_train, y_train)
     print(model)
     y_pred = model.predict(X_test)
-    print(y_pred)
+    print("y_test:\n",y_test.flatten())
+    print("y_pred:\n",y_pred)
     accuracy = accuracy_score(y_test, y_pred)
     print("Accuracy: %.2f%%" % (accuracy * 100.0))
 
@@ -405,5 +409,5 @@ if __name__ == '__main__':
     y = read_y(df_modified)
     is_balanced_database(df_modified)
     X_train, X_test, y_train, y_test = encoder(x,y)
-    lstm_model1(X_train, X_test, y_train, y_test,max_route_length)
-    # xgboost_model(X_train, X_test, y_train, y_test)
+    # lstm_model1(X_train, X_test, y_train, y_test,max_route_length)
+    xgboost_model(X_train, X_test, y_train, y_test)
