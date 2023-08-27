@@ -7,6 +7,8 @@ from sklearn.preprocessing import LabelEncoder
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout,Flatten
 from tensorflow.keras.preprocessing.sequence import pad_sequences
+from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
+from sklearn.metrics import classification_report, confusion_matrix
 import tensorflow as tf
 from keras import backend as K
 from sklearn.model_selection import train_test_split
@@ -15,6 +17,10 @@ import csv
 import time
 import random
 import math
+import seaborn as sns
+# it is important to estimate the model overall but also by dividing into segments
+# especially since the dataset is imbalanced
+from sklearn.metrics import classification_report, f1_score
 
 
 # read the tracks from path of csv file . and presents 10 tracks in a table
@@ -240,12 +246,12 @@ def encoder(x,y):
     # Pad sequences to ensure consistent length
     # test_size - determines the percentage division into test and train.
     # random_state - Selects regular examples for training and testing in all running.
+    # stratify = y - We will make sure that the training and test sets maintain the original ratio.
     X_train, X_test, y_train, y_test = train_test_split(x, labels_encoded, test_size=0.2,
-                                                        random_state=42)
-    print("encoder shape(X_train) = ", X_train.shape)
-    print("encoder shape(y_train) = ", y_train.shape)
-    print("encoder shape(X_train) = ", X_test.shape)
-    print("encoder shape(y_train) = ", y_test.shape)
+                                                        random_state=42, stratify=y)
+    print("sum(y)/len(y) = ", sum(labels_encoded)/len(labels_encoded))
+    print("sum(y_train)/len(y_train)= ", sum(y_train)/len(y_train))
+    print("sum(y_test)/len(y_test)= ", sum(y_test)/len(y_test))
     # y_train, y_test = oneHotEndcoding(y_train, y_test)
     return X_train, X_test, y_train, y_test
 
@@ -384,18 +390,34 @@ def creating_synthetic_track_database():
     write_to_csv('combined_vehicle_tracks.csv', combined_route_points)
 
 
+def plot_confusion_matrix(cf_matrix):
+    print('Confusion Matrix')
+    ax = plt.subplot()
+    sns.heatmap(cf_matrix, annot=True, ax=ax, fmt='d', cmap='Blues', cbar=False)
+    # labels, title and ticks
+    ax.set_title('Confusion Matrix')
+    ax.set_xlabel('Predicted labels')
+    ax.set_ylabel('Actual labels')
+    ax.xaxis.set_ticklabels(['Not accident', 'Accident'])
+    ax.yaxis.set_ticklabels(['Not accident', 'Accident'])
+    plt.show()  # Display the plot
+
+
 def xgboost_model(X_train, X_test, y_train, y_test):
-    model = XGBClassifier(subsample=0.5, learning_rate=0.1, max_depth=4)
+    model = XGBClassifier(n_estimators=100,objective='binary:logistic', missing=1, seed=42,subsample=0.5, learning_rate=0.1, max_depth=4,eval_metric='aucpr', early_stopping_rounds=10,)
     X_train = X_train.reshape(X_train.shape[0], -1)
     X_test = X_test.reshape(X_test.shape[0], -1)
-    print("=======================================X_train.shape",X_train.shape)
-    model.fit(X_train, y_train)
+    model.fit(X_train, y_train,verbose=True,
+                    eval_set=[(X_test,y_test)])
     print(model)
     y_pred = model.predict(X_test)
     print("y_test:\n",y_test.flatten())
     print("y_pred:\n",y_pred)
     accuracy = accuracy_score(y_test, y_pred)
     print("Accuracy: %.2f%%" % (accuracy * 100.0))
+    cf_matrix = confusion_matrix(y_test, y_pred)
+    plot_confusion_matrix(cf_matrix)
+    print(classification_report(y_test, y_pred))
 
 
 if __name__ == '__main__':
