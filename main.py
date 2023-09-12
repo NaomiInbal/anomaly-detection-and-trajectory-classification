@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+from keras.src.optimizers import Adam
 from xgboost import XGBClassifier
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
@@ -192,7 +193,7 @@ def model_comiple_run(model,X_train,Y_train,X_test,y_test,callbacks):
   #type y_test - <class 'pandas.core.frame.DataFrame'>
   # model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy', 'precision', 'recall', 'f1_score'])
   model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy',f1])
-  model_history = model.fit(X_train, Y_train,validation_data=(X_test, y_test), verbose=1, epochs= 50)
+  model_history = model.fit(X_train, Y_train,validation_data=(X_test, y_test), verbose=1, epochs= 100)
   # batch_size=32, validation_data=(X_test,y_test)\,callbacks=callbacks,verbose=1)
   return model_history
 
@@ -421,7 +422,7 @@ def xgboost_model(X_train, X_test, y_train, y_test):
 
 
 if __name__ == '__main__':
-    creating_synthetic_track_database()
+    # creating_synthetic_track_database()
     data_frame = import_data()
     vehicle = "vehicle_1099"
     drawing_track(data_frame, vehicle)
@@ -431,5 +432,5 @@ if __name__ == '__main__':
     y = read_y(df_modified)
     is_balanced_database(df_modified)
     X_train, X_test, y_train, y_test = encoder(x,y)
-    # lstm_model1(X_train, X_test, y_train, y_test,max_route_length)
-    xgboost_model(X_train, X_test, y_train, y_test)
+    lstm_model1(X_train, X_test, y_train, y_test,max_route_length)
+    # xgboost_model(X_train, X_test, y_train, y_test)
