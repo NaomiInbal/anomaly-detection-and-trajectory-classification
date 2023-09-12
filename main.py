@@ -22,6 +22,7 @@ import seaborn as sns
 # it is important to estimate the model overall but also by dividing into segments
 # especially since the dataset is imbalanced
 from sklearn.metrics import classification_report, f1_score
+from tensorflow.keras.optimizers import Adam
 
 
 # read the tracks from path of csv file . and presents 10 tracks in a table
@@ -149,7 +150,7 @@ def callbacks_function(name):
                                                ,save_weights_only=False,mode='min')
 
   def scheduler(epoch, lr):
-    if epoch%5 == 0:
+    if epoch%5 == 0 and epoch > 0:
       lr = lr/2
     return lr
 
@@ -192,7 +193,17 @@ def model_comiple_run(model,X_train,Y_train,X_test,y_test,callbacks):
   #typeX_test - <class 'numpy.ndarray'>
   #type y_test - <class 'pandas.core.frame.DataFrame'>
   # model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy', 'precision', 'recall', 'f1_score'])
-  model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy',f1])
+
+  # Define your desired initial learning rate
+  initial_learning_rate = 0.001  # Change this to your desired value
+
+  # Create an optimizer with the specified learning rate
+  optimizer = Adam(learning_rate=initial_learning_rate)
+
+  # Compile your model using the custom optimizer
+  model.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy', f1])
+
+  # model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy',f1])
   model_history = model.fit(X_train, Y_train,validation_data=(X_test, y_test), verbose=1, epochs= 100)
   # batch_size=32, validation_data=(X_test,y_test)\,callbacks=callbacks,verbose=1)
   return model_history
@@ -282,6 +293,16 @@ def lstm_model1(X_train, X_test, y_train, y_test,max_route_length):
 
     loss = model.evaluate(X_test, y_test, verbose=1, steps=X_test.shape[0]) # evaluate the model
     print('Final loss 1 (cross-entropy and accuracy and F1):', loss)
+
+    y_pred = model.predict(X_test)
+    threshold = 0.5   # Define a threshold for binary classification (e.g., 0.5)
+    y_pred_binary = (y_pred >= threshold).astype(int)     # Convert predicted probabilities to binary labels
+    print("y_test:\n", y_test.flatten())
+    print("===========================================",y_pred_binary)
+    print("===========================================", y_test)
+    cf_matrix = confusion_matrix(y_test, y_pred_binary)
+    plot_confusion_matrix(cf_matrix)
+    print(classification_report(y_test, y_pred_binary))
 
     # # Classify new tracks using the trained model
     # new_track = [(102.4208282026001537,100.6556837362916167,1.7341556317074696),(4.4079540881162123, -2.4456476447699654, 1.734483396060324),(2.3953228814527225,-0.2356115532483141,1.7348111604131784),(2.3826916747892333,-0.0254120095153621,1.7351389247660327),(2.3700604681257427,0.1846240820062891,1.7354666891188872)]# Example new track values
