@@ -9,7 +9,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout,Flatten
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import classification_report, confusion_matrix, precision_score, recall_score
 import tensorflow as tf
 from keras import backend as K
 from sklearn.model_selection import train_test_split
@@ -187,7 +187,8 @@ def f1(y_true, y_pred):
     return precision
   precision = precision(y_true, y_pred)
   recall = recall(y_true, y_pred)
-  return 2*((precision*recall)/(precision+recall+tf.keras.backend.epsilon()))
+  b=0.5
+  return (((1+b)**2)*((precision*recall))/(((b**2)*(precision))+recall+tf.keras.backend.epsilon()))
 
 def model_comiple_run(model,X_train,Y_train,X_test,y_test,callbacks):
   #typeX_test - <class 'numpy.ndarray'>
@@ -302,8 +303,15 @@ def lstm_model1(X_train, X_test, y_train, y_test,max_route_length):
     print("===========================================", y_test)
     cf_matrix = confusion_matrix(y_test, y_pred_binary)
     plot_confusion_matrix(cf_matrix)
-    print(classification_report(y_test, y_pred_binary))
 
+    # Calculate precision
+    precision = precision_score(y_test, y_pred_binary)
+
+    # Calculate recall
+    recall = recall_score(y_test, y_pred_binary)
+
+    print(f"Precision: {precision}")
+    print(f"Recall: {recall}")
     # # Classify new tracks using the trained model
     # new_track = [(102.4208282026001537,100.6556837362916167,1.7341556317074696),(4.4079540881162123, -2.4456476447699654, 1.734483396060324),(2.3953228814527225,-0.2356115532483141,1.7348111604131784),(2.3826916747892333,-0.0254120095153621,1.7351389247660327),(2.3700604681257427,0.1846240820062891,1.7354666891188872)]# Example new track values
     # new_track = [(0, 0, 0)] * (max_route_length - len(new_track)) + new_track
