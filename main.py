@@ -23,6 +23,9 @@ import seaborn as sns
 # especially since the dataset is imbalanced
 from sklearn.metrics import classification_report, f1_score
 from tensorflow.keras.optimizers import Adam
+random.seed(0)
+np.random.seed(0)
+tf.random.set_seed(0)
 
 
 # read the tracks from path of csv file . and presents 10 tracks in a table
@@ -156,7 +159,7 @@ def callbacks_function(name):
 
   lr_schedule = tf.keras.callbacks.LearningRateScheduler(scheduler,verbose = 0)
 
-  return early_stop, monitor, lr_schedule
+  return lr_schedule
 
 
 def f1(y_true, y_pred):
@@ -190,13 +193,13 @@ def f1(y_true, y_pred):
   b=0.5
   return (((1+b)**2)*((precision*recall))/(((b**2)*(precision))+recall+tf.keras.backend.epsilon()))
 
-def model_comiple_run(model,X_train,Y_train,X_test,y_test,callbacks):
+def model_comiple_run(num_epochs,initial_learning_rate,model,X_train,Y_train,X_test,y_test,callbacks):
   #typeX_test - <class 'numpy.ndarray'>
   #type y_test - <class 'pandas.core.frame.DataFrame'>
   # model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy', 'precision', 'recall', 'f1_score'])
 
   # Define your desired initial learning rate
-  initial_learning_rate = 0.001  # Change this to your desired value
+  # initial_learning_rate = 0.1  # Change this to your desired value
 
   # Create an optimizer with the specified learning rate
   optimizer = Adam(learning_rate=initial_learning_rate)
@@ -205,7 +208,7 @@ def model_comiple_run(model,X_train,Y_train,X_test,y_test,callbacks):
   model.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy', f1])
 
   # model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy',f1])
-  model_history = model.fit(X_train, Y_train,validation_data=(X_test, y_test), verbose=1, epochs= 100)
+  model_history = model.fit(X_train, Y_train,validation_data=(X_test, y_test), verbose=1, epochs= num_epochs)
   # batch_size=32, validation_data=(X_test,y_test)\,callbacks=callbacks,verbose=1)
   return model_history
 
@@ -271,47 +274,49 @@ def encoder(x,y):
 
 
 #LSTM - model 1
-def lstm_model1(X_train, X_test, y_train, y_test,max_route_length):
-    # Experiment 1: hidden_layers = 1, total_nodes = 64
-    # Define the LSTM model
-    model = Sequential()
-    # input_shape - we define an LSTM model with an input shape of (param1, param2), meaning it takes in a sequence of param1 inputs with param2 feature each.
-    model.add(LSTM(40, input_shape=(X_train.shape[1], X_train.shape[2])))
-    # model.add(Dropout(0.2))
-    model.add(Flatten())
-    # The sigmoid activation function is commonly used for binary classification problems, where the output values range between 0 and 1
-    model.add(Dense(1, activation='sigmoid'))
-    model.summary()
-    model_name = 'First'
-    early_stop, monitor, lr_schedule = callbacks_function(model_name)
-    # Assuming X_train and X_test are your ragged nested sequences
-    model_history = model_comiple_run(model, X_train, y_train, X_test, y_test,
-                                      callbacks=[early_stop, monitor, lr_schedule])
-    model_plot(model_history)
-    # model.load_weights(model_name)
-    # loss = model.evaluate(X_test, y_test, verbose=1, steps=X_test.shape[0]) # Evaluate the model
-    # print('Final loss 9 (cross-entropy and accuracy and F1):', loss)
-
-    loss = model.evaluate(X_test, y_test, verbose=1, steps=X_test.shape[0]) # evaluate the model
-    print('Final loss 1 (cross-entropy and accuracy and F1):', loss)
-
-    y_pred = model.predict(X_test)
-    threshold = 0.5   # Define a threshold for binary classification (e.g., 0.5)
-    y_pred_binary = (y_pred >= threshold).astype(int)     # Convert predicted probabilities to binary labels
-    print("y_test:\n", y_test.flatten())
-    print("===========================================",y_pred_binary)
-    print("===========================================", y_test)
-    cf_matrix = confusion_matrix(y_test, y_pred_binary)
-    plot_confusion_matrix(cf_matrix)
-
-    # Calculate precision
-    precision = precision_score(y_test, y_pred_binary)
-
-    # Calculate recall
-    recall = recall_score(y_test, y_pred_binary)
-
-    print(f"Precision: {precision}")
-    print(f"Recall: {recall}")
+# def lstm_model1(X_train, X_test, y_train, y_test,max_route_length):
+#     # Experiment 1: hidden_layers = 1, total_nodes = 64
+#     # Define the LSTM model
+#     model = Sequential()
+#     # input_shape - we define an LSTM model with an input shape of (param1, param2), meaning it takes in a sequence of param1 inputs with param2 feature each.
+#     model.add(LSTM(40, input_shape=(X_train.shape[1], X_train.shape[2])))
+#     # model.add(Dropout(0.2))
+#     model.add(Flatten())
+#     # The sigmoid activation function is commonly used for binary classification problems, where the output values range between 0 and 1
+#     model.add(Dense(1, activation='sigmoid'))
+#     model.summary()
+#     model_name = 'First'
+#     lr_schedule = callbacks_function(model_name)
+#     # Assuming X_train and X_test are your ragged nested sequences
+#     initial_learning_rate = 0.1
+#     num_epochs = 100
+#     model_history = model_comiple_run(num_epochs,initial_learning_rate,model, X_train, y_train, X_test, y_test,
+#                                       callbacks=[lr_schedule])
+#     model_plot(model_history)
+#     # model.load_weights(model_name)
+#     # loss = model.evaluate(X_test, y_test, verbose=1, steps=X_test.shape[0]) # Evaluate the model
+#     # print('Final loss 9 (cross-entropy and accuracy and F1):', loss)
+#
+#     loss = model.evaluate(X_test, y_test, verbose=1, steps=X_test.shape[0]) # evaluate the model
+#     print('Final loss 1 (cross-entropy and accuracy and F1):', loss)
+#
+#     y_pred = model.predict(X_test)
+#     threshold = 0.5   # Define a threshold for binary classification (e.g., 0.5)
+#     y_pred_binary = (y_pred >= threshold).astype(int)     # Convert predicted probabilities to binary labels
+#     print("y_test:\n", y_test.flatten())
+#     print("===========================================",y_pred_binary)
+#     print("===========================================", y_test)
+#     cf_matrix = confusion_matrix(y_test, y_pred_binary)
+#     plot_confusion_matrix(cf_matrix)
+#
+#     # Calculate precision
+#     precision = precision_score(y_test, y_pred_binary)
+#
+#     # Calculate recall
+#     recall = recall_score(y_test, y_pred_binary)
+#
+#     print(f"Precision: {precision}")
+#     print(f"Recall: {recall}")
     # # Classify new tracks using the trained model
     # new_track = [(102.4208282026001537,100.6556837362916167,1.7341556317074696),(4.4079540881162123, -2.4456476447699654, 1.734483396060324),(2.3953228814527225,-0.2356115532483141,1.7348111604131784),(2.3826916747892333,-0.0254120095153621,1.7351389247660327),(2.3700604681257427,0.1846240820062891,1.7354666891188872)]# Example new track values
     # new_track = [(0, 0, 0)] * (max_route_length - len(new_track)) + new_track
@@ -327,6 +332,98 @@ def lstm_model1(X_train, X_test, y_train, y_test,max_route_length):
     # else:
     #     print("The new route is normal")
 
+
+
+#LSTM - model 2
+def lstm_model2(X_train, X_test, y_train, y_test,max_route_length):
+    # Experiment 1: hidden_layers = 1, total_nodes = 64
+    # Define the LSTM model
+    model = Sequential()
+    # input_shape - we define an LSTM model with an input shape of (param1, param2), meaning it takes in a sequence of param1 inputs with param2 feature each.
+    model.add(LSTM(40, input_shape=(X_train.shape[1], X_train.shape[2])))
+    # model.add(Dropout(0.2))
+    model.add(Flatten())
+    # The sigmoid activation function is commonly used for binary classification problems, where the output values range between 0 and 1
+    model.add(Dense(1, activation='sigmoid'))
+    model.summary()
+    model_name = 'model2'
+    lr_schedule = callbacks_function(model_name)
+    # Assuming X_train and X_test are your ragged nested sequences
+    initial_learning_rate = 0.001
+    num_epochs =100
+    model_history = model_comiple_run(num_epochs,initial_learning_rate,model, X_train, y_train, X_test, y_test,
+                                      callbacks=[ lr_schedule])
+    model_plot(model_history)
+    # model.load_weights(model_name)
+    # loss = model.evaluate(X_test, y_test, verbose=1, steps=X_test.shape[0]) # Evaluate the model
+    # print('Final loss 9 (cross-entropy and accuracy and F1):', loss)
+
+    loss = model.evaluate(X_test, y_test, verbose=1, steps=X_test.shape[0]) # evaluate the model
+    print('Final loss 1 (cross-entropy and accuracy and F1):', loss)
+
+    y_pred = model.predict(X_test)
+    threshold = 0.5   # Define a threshold for binary classification (e.g., 0.5)
+    y_pred_binary = (y_pred >= threshold).astype(int)     # Convert predicted probabilities to binary labels
+    print("y_test:\n", y_test.flatten())
+    print("===========================================",y_pred)
+    print("===========================================", y_test)
+    cf_matrix = confusion_matrix(y_test, y_pred_binary)
+    plot_confusion_matrix(cf_matrix)
+
+    # Calculate precision
+    precision = precision_score(y_test, y_pred_binary)
+
+    # Calculate recall
+    recall = recall_score(y_test, y_pred_binary)
+
+    print(f"Precision: {precision}")
+    print(f"Recall: {recall}")
+
+#LSTM - model 3
+def lstm_model3(X_train, X_test, y_train, y_test,max_route_length):
+    tf.keras.backend.clear_session()
+    # Experiment 1: hidden_layers = 1, total_nodes = 64
+    # Define the LSTM model
+    model = Sequential()
+    # input_shape - we define an LSTM model with an input shape of (param1, param2), meaning it takes in a sequence of param1 inputs with param2 feature each.
+    model.add(LSTM(128, input_shape=(X_train.shape[1], X_train.shape[2])))
+    # model.add(Dropout(0.2))
+    model.add(Flatten())
+    # The sigmoid activation function is commonly used for binary classification problems, where the output values range between 0 and 1
+    model.add(Dense(1, activation='sigmoid'))
+    model.summary()
+    model_name = 'model3'
+    lr_schedule = callbacks_function(model_name)
+    # Assuming X_train and X_test are your ragged nested sequences
+    initial_learning_rate = 0.001
+    num_epochs =1000
+    model_history = model_comiple_run(num_epochs,initial_learning_rate,model, X_train, y_train, X_test, y_test,
+                                      callbacks=[ lr_schedule])
+    model_plot(model_history)
+    # model.load_weights(model_name)
+    # loss = model.evaluate(X_test, y_test, verbose=1, steps=X_test.shape[0]) # Evaluate the model
+    # print('Final loss 9 (cross-entropy and accuracy and F1):', loss)
+
+    loss = model.evaluate(X_test, y_test, verbose=1, steps=X_test.shape[0]) # evaluate the model
+    print('Final loss 1 (cross-entropy and accuracy and F1):', loss)
+
+    y_pred = model.predict(X_test)
+    threshold = 0.5   # Define a threshold for binary classification (e.g., 0.5)
+    y_pred_binary = (y_pred >= threshold).astype(int)     # Convert predicted probabilities to binary labels
+    print("y_test:\n", y_test.flatten())
+    print("===========================================",y_pred)
+    print("===========================================", y_test)
+    cf_matrix = confusion_matrix(y_test, y_pred_binary)
+    plot_confusion_matrix(cf_matrix)
+
+    # Calculate precision
+    precision = precision_score(y_test, y_pred_binary)
+
+    # Calculate recall
+    recall = recall_score(y_test, y_pred_binary)
+
+    print(f"Precision: {precision}")
+    print(f"Recall: {recall}")
 def calculate_next_point(last_x, last_y, angle, distance):
     c = last_x + 10
     d = last_y + 10
@@ -451,7 +548,7 @@ def xgboost_model(X_train, X_test, y_train, y_test):
 
 
 if __name__ == '__main__':
-    # creating_synthetic_track_database()
+    creating_synthetic_track_database()
     data_frame = import_data()
     vehicle = "vehicle_1099"
     drawing_track(data_frame, vehicle)
@@ -461,5 +558,7 @@ if __name__ == '__main__':
     y = read_y(df_modified)
     is_balanced_database(df_modified)
     X_train, X_test, y_train, y_test = encoder(x,y)
-    lstm_model1(X_train, X_test, y_train, y_test,max_route_length)
+    # lstm_model1(X_train, X_test, y_train, y_test,max_route_length)
+    # lstm_model2(X_train, X_test, y_train, y_test,max_route_length)
+    lstm_model3(X_train, X_test, y_train, y_test,max_route_length)
     # xgboost_model(X_train, X_test, y_train, y_test)
