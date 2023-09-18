@@ -23,6 +23,8 @@ import seaborn as sns
 # especially since the dataset is imbalanced
 from sklearn.metrics import classification_report, f1_score
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import EarlyStopping
+
 random.seed(0)
 np.random.seed(0)
 tf.random.set_seed(0)
@@ -191,7 +193,7 @@ def f1(y_true, y_pred):
   precision = precision(y_true, y_pred)
   recall = recall(y_true, y_pred)
   b=0.5
-  return (((1+b)**2)*((precision*recall))/(((b**2)*(precision))+recall+tf.keras.backend.epsilon()))
+  return ((((1+b)**2)*(precision*recall))/(((b**2)*(precision))+recall+tf.keras.backend.epsilon()))
 
 def model_comiple_run(num_epochs,initial_learning_rate,model,X_train,Y_train,X_test,y_test,callbacks):
   #typeX_test - <class 'numpy.ndarray'>
