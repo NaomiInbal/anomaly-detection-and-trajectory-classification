@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 # from xgboost import XGBClassifier
 import numpy as np
+from keras.src.layers import BatchNormalization
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import LabelEncoder
 from tensorflow.keras.models import Sequential
@@ -22,6 +23,7 @@ import seaborn as sns
 # especially since the dataset is imbalanced
 from sklearn.metrics import classification_report, f1_score
 from tensorflow.keras.optimizers import Adam
+from keras.optimizers import Adagrad
 # from xgboost import XGBClassifier
 
 # from tensorflow.keras.callbacks import EarlyStopping
@@ -32,14 +34,17 @@ tf.random.set_seed(0)
 
 
 # read the tracks from path of csv file . and presents 10 tracks in a table
-def import_data():
+def import_data(model = "model"):
     # read the tracks from path of csv file . and presents 10 tracks in a table
     pd.options.display.max_columns = 25
-    df = pd.read_csv("combined_vehicle_tracks.csv")
+    if(model=="big_data_model"):
+        path = "big_data_model.csv"
+    else:
+        path = "vehicle_tracks.csv"
+    df = pd.read_csv(path)
     # Define the file path and name for the new file
-    file_path = "tracks_database.csv"
     # Write the DataFrame to a new CSV file
-    df.to_csv(file_path, index=False)
+    df.to_csv(path, index=False)
     print("print the first five rows from the tracks_database.csv file:")
     print(df.head(5))
     df = pd.DataFrame(df)
@@ -64,7 +69,7 @@ def drawing_track(df, vehicle_id):
 
 #Normalize the data,
 #The fit_transform() method is used to fit the data into a model and transform it into a form that is more suitable for the model in a single step.
-def data_normalization(df_modified):
+def data_normalization(df_modified,model = "model"):
     # Initialize the scaler
     scaler = MinMaxScaler()
 
@@ -75,17 +80,24 @@ def data_normalization(df_modified):
     # df_modified['local_x_norm'] = scaler.fit_transform(df_modified[['local_x_norm']])
     # df_modified['local_y_norm'] = scaler.fit_transform(df_modified[['local_y_norm']])
     # Write the DataFrame to the same CSV file
-    df_modified.to_csv("tracks_database_modified.csv", index=False)
+    if(model == "big_data_model"):
+        path = "big_tracks_database_modified.csv"
+    else:
+        path = "tracks_database_modified.csv"
+    df_modified.to_csv(path, index=False)
     # Review the indicators.
     print(df_modified.describe())
     return df_modified
 
 
 #Group by the cordinates to a tracks
-def group_tracks(df_modified):
+def group_tracks(df_modified,model = "model"):
+    if (model == "big_data_model"):
+        path = "big_tracks_database_modified.csv"
+    else:
+        path = "tracks_database_modified.csv"
     # Load data from CSV file
-    df_modified = pd.read_csv("tracks_database_modified.csv")
-
+    df_modified = pd.read_csv(path)
     # Sort the DataFrame by 'global_time' to preserve the original order
     sorted_df = df_modified.sort_values('global_time')
 
@@ -102,7 +114,7 @@ def group_tracks(df_modified):
     grouped.reset_index(drop=True, inplace=True)
 
     # Save grouped data to CSV file
-    grouped.to_csv("tracks_database_modified.csv", index=False)
+    grouped.to_csv(path, index=False)
     return grouped
 
 
@@ -196,7 +208,7 @@ def f1(y_true, y_pred):
   b=0.5
   return ((((1+b)**2)*(precision*recall))/(((b**2)*(precision))+recall+tf.keras.backend.epsilon()))
 
-def model_comiple_run(num_epochs,initial_learning_rate,model,X_train,Y_train,X_test,y_test,callbacks):
+def model_comiple_run(optimizer="Adam",num_epochs,initial_learning_rate,model,X_train,Y_train,X_test,y_test,callbacks):
   #typeX_test - <class 'numpy.ndarray'>
   #type y_test - <class 'pandas.core.frame.DataFrame'>
   # model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy', 'precision', 'recall', 'f1_score'])
@@ -206,6 +218,8 @@ def model_comiple_run(num_epochs,initial_learning_rate,model,X_train,Y_train,X_t
 
   # Create an optimizer with the specified learning rate
   optimizer = Adam(learning_rate=initial_learning_rate)
+  if(optimizer == "Adagrade"):
+      optimizer = Adagrad(learning_rate=initial_learning_rate)
 
   # Compile your model using the custom optimizer
   model.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy', f1])
@@ -436,7 +450,7 @@ def lstm_model4(X_train, X_test, y_train, y_test,max_route_length):
     # Define the LSTM model
     model = Sequential()
     # input_shape - we define an LSTM model with an input shape of (param1, param2), meaning it takes in a sequence of param1 inputs with param2 feature each.
-    model.add(LSTM(40, input_shape=(X_train.shape[1], X_train.shape[2])))
+    model.add(LSTM(128, input_shape=(X_train.shape[1], X_train.shape[2])))
     # model.add(Dropout(0.2))
     model.add(Flatten())
     # The sigmoid activation function is commonly used for binary classification problems, where the output values range between 0 and 1
@@ -448,6 +462,106 @@ def lstm_model4(X_train, X_test, y_train, y_test,max_route_length):
     initial_learning_rate = 0.001
     num_epochs =100
     model_history = model_comiple_run(num_epochs,initial_learning_rate,model, X_train, y_train, X_test, y_test,
+                                      callbacks=[ lr_schedule])
+    model_plot(model_history)
+    # model.load_weights(model_name)
+    # loss = model.evaluate(X_test, y_test, verbose=1, steps=X_test.shape[0]) # Evaluate the model
+    # print('Final loss 9 (cross-entropy and accuracy and F1):', loss)
+
+    loss = model.evaluate(X_test, y_test, verbose=1, steps=X_test.shape[0]) # evaluate the model
+    print('Final loss 1 (cross-entropy and accuracy and F1):', loss)
+
+    y_pred = model.predict(X_test)
+    threshold = 0.5   # Define a threshold for binary classification (e.g., 0.5)
+    y_pred_binary = (y_pred >= threshold).astype(int)     # Convert predicted probabilities to binary labels
+    print("y_test:\n", y_test.flatten())
+    print("===========================================",y_pred)
+    print("===========================================", y_test)
+    cf_matrix = confusion_matrix(y_test, y_pred_binary)
+    plot_confusion_matrix(cf_matrix)
+
+    # Calculate precision
+    precision = precision_score(y_test, y_pred_binary)
+
+    # Calculate recall
+    recall = recall_score(y_test, y_pred_binary)
+
+    print(f"Precision: {precision}")
+    print(f"Recall: {recall}")
+
+
+
+
+#LSTM - model 5
+def lstm_model5(X_train, X_test, y_train, y_test,max_route_length):
+    tf.keras.backend.clear_session()
+    # Experiment 1: hidden_layers = 1, total_nodes = 64
+    # Define the LSTM model
+    model = Sequential()
+    # input_shape - we define an LSTM model with an input shape of (param1, param2), meaning it takes in a sequence of param1 inputs with param2 feature each.
+    model.add(LSTM(128, input_shape=(X_train.shape[1], X_train.shape[2]),return_sequences=True))
+    model.add(LSTM(128, input_shape=(X_train.shape[1], X_train.shape[2])))
+    # model.add(Dropout(0.2))
+    model.add(Flatten())
+    # The sigmoid activation function is commonly used for binary classification problems, where the output values range between 0 and 1
+    model.add(Dense(1, activation='sigmoid'))
+    model.summary()
+    model_name = 'model5'
+    lr_schedule = callbacks_function(model_name)
+    # Assuming X_train and X_test are your ragged nested sequences
+    initial_learning_rate = 0.001
+    num_epochs =100
+    model_history = model_comiple_run(num_epochs,initial_learning_rate,model, X_train, y_train, X_test, y_test,
+                                      callbacks=[ lr_schedule])
+    model_plot(model_history)
+    # model.load_weights(model_name)
+    # loss = model.evaluate(X_test, y_test, verbose=1, steps=X_test.shape[0]) # Evaluate the model
+    # print('Final loss 9 (cross-entropy and accuracy and F1):', loss)
+
+    loss = model.evaluate(X_test, y_test, verbose=1, steps=X_test.shape[0]) # evaluate the model
+    print('Final loss 1 (cross-entropy and accuracy and F1):', loss)
+
+    y_pred = model.predict(X_test)
+    threshold = 0.5   # Define a threshold for binary classification (e.g., 0.5)
+    y_pred_binary = (y_pred >= threshold).astype(int)     # Convert predicted probabilities to binary labels
+    print("y_test:\n", y_test.flatten())
+    print("===========================================",y_pred)
+    print("===========================================", y_test)
+    cf_matrix = confusion_matrix(y_test, y_pred_binary)
+    plot_confusion_matrix(cf_matrix)
+
+    # Calculate precision
+    precision = precision_score(y_test, y_pred_binary)
+
+    # Calculate recall
+    recall = recall_score(y_test, y_pred_binary)
+
+    print(f"Precision: {precision}")
+    print(f"Recall: {recall}")
+
+
+
+#LSTM - model 6
+def lstm_model6(X_train, X_test, y_train, y_test,max_route_length):
+    tf.keras.backend.clear_session()
+    # Experiment 1: hidden_layers = 1, total_nodes = 64
+    # Define the LSTM model
+    model = Sequential()
+    # input_shape - we define an LSTM model with an input shape of (param1, param2), meaning it takes in a sequence of param1 inputs with param2 feature each.
+    model.add(LSTM(128, input_shape=(X_train.shape[1], X_train.shape[2]),return_sequences=True))
+    model.add(LSTM(128, input_shape=(X_train.shape[1], X_train.shape[2])))
+
+    model.add(Flatten())
+    # The sigmoid activation function is commonly used for binary classification problems, where the output values range between 0 and 1
+    model.add(Dense(1, activation='sigmoid'))
+    model.summary()
+    model_name = 'model6'
+    lr_schedule = callbacks_function(model_name)
+    # Assuming X_train and X_test are your ragged nested sequences
+    initial_learning_rate = 0.01
+    num_epochs =100
+    optimizer = "Adagrade"
+    model_history = model_comiple_run(optimizer, num_epochs,initial_learning_rate,model, X_train, y_train, X_test, y_test,
                                       callbacks=[ lr_schedule])
     model_plot(model_history)
     # model.load_weights(model_name)
@@ -552,7 +666,7 @@ def creating_synthetic_track_database():
     combined_route_points = []
 
     vehicle_data = {}  # Dictionary to store vehicle data
-    for vehicle_id in range(1,10000):  # Create 5 different vehicle tracks
+    for vehicle_id in range(1,1500):  # Create 5 different vehicle tracks
         has_accident = random.random() < 0.2  # 50% probability of having an accident
         route_points = generate_route_points(num_points, distance_increment, noisy_points, has_accident, f'vehicle_{vehicle_id}')
         combined_route_points.extend(route_points)
@@ -565,7 +679,7 @@ def creating_synthetic_track_database():
                 if combined_route_points[i][4] == vehicle_id:
                     combined_route_points[i] = (combined_route_points[i][0], combined_route_points[i][1],
                                                combined_route_points[i][2], 1, vehicle_id)
-    write_to_csv('combined_vehicle_tracks.csv', combined_route_points)
+    write_to_csv('vehicle_tracks.csv', combined_route_points)
 
 
 def plot_confusion_matrix(cf_matrix):
@@ -599,18 +713,31 @@ def xgboost_model(X_train, X_test, y_train, y_test):
 
 
 if __name__ == '__main__':
-    creating_synthetic_track_database()
-    data_frame = import_data()
-    vehicle = "vehicle_1099"
-    drawing_track(data_frame, vehicle)
-    df_modified = data_normalization(data_frame)
-    df_modified = group_tracks(df_modified)
-    x,max_route_length = reshape_tracks(df_modified)
-    y = read_y(df_modified)
-    is_balanced_database(df_modified)
-    X_train, X_test, y_train, y_test = encoder(x,y)
-    lstm_model1(X_train, X_test, y_train, y_test,max_route_length)
+    # creating_synthetic_track_database()
+    # data_frame = import_data()
+    # vehicle = "vehicle_1099"
+    # drawing_track(data_frame, vehicle)
+    # df_modified = data_normalization(data_frame)
+    # df_modified = group_tracks(df_modified)
+    # x,max_route_length = reshape_tracks(df_modified)
+    # y = read_y(df_modified)
+    # is_balanced_database(df_modified)
+    # X_train, X_test, y_train, y_test = encoder(x,y)
+    # lstm_model1(X_train, X_test, y_train, y_test,max_route_length)
     # lstm_model2(X_train, X_test, y_train, y_test,max_route_length)
     # lstm_model3(X_train, X_test, y_train, y_test,max_route_length)
+    # increase the number of data.
+    data_frame = import_data("big_data_model")
+    vehicle = "vehicle_1099"
+    drawing_track(data_frame, vehicle)
+    df_modified = data_normalization(data_frame,"big_data_model")
+    df_modified = group_tracks(df_modified,"big_data_model")
+    x, max_route_length = reshape_tracks(df_modified)
+    y = read_y(df_modified)
+    is_balanced_database(df_modified)
+    X_train, X_test, y_train, y_test = encoder(x, y)
     # lstm_model4(X_train, X_test, y_train, y_test,max_route_length)
+    # lstm_model5(X_train, X_test, y_train, y_test,max_route_length)
+    lstm_model6(X_train, X_test, y_train, y_test,max_route_length)
+
     # xgboost_model(X_train, X_test, y_train, y_test)
