@@ -209,6 +209,23 @@ def f1(y_true, y_pred):
   b=0.5
   return ((((1+b)**2)*(precision*recall))/(((b**2)*(precision))+recall+tf.keras.backend.epsilon()))
 
+
+
+#callbacks_function with early_stop parameter for model7
+def callbacks_function_model7(name):
+  early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10, verbose=0, mode='min', restore_best_weights=True)
+  monitor = tf.keras.callbacks.ModelCheckpoint(name, monitor='val_loss', verbose=0,save_best_only=True\
+                                               ,save_weights_only=True,mode='min')
+
+  def scheduler(epoch, lr):
+    if epoch%5 == 0 and epoch > 0:
+      lr = lr/2
+    return lr
+
+  lr_schedule = tf.keras.callbacks.LearningRateScheduler(scheduler,verbose = 0)
+
+  return early_stop, monitor, lr_schedule
+
 def model_comiple_run(num_epochs,initial_learning_rate,model,X_train,Y_train,X_test,y_test,callbacks,optimizer = "Adam"):
   #typeX_test - <class 'numpy.ndarray'>
   #type y_test - <class 'pandas.core.frame.DataFrame'>
@@ -607,12 +624,12 @@ def lstm_model7(X_train, X_test, y_train, y_test,max_route_length):
     model.add(Dense(1, activation='sigmoid'))
     model.summary()
     model_name = 'model7'
-    lr_schedule = callbacks_function(model_name)
+    early_stop, monitor,lr_schedule = callbacks_function_model7(model_name)
     # Assuming X_train and X_test are your ragged nested sequences
     initial_learning_rate = 0.001
     num_epochs =100
     model_history = model_comiple_run(num_epochs,initial_learning_rate,model, X_train, y_train, X_test, y_test,
-                                      callbacks=[ lr_schedule])
+                                      callbacks=[early_stop, monitor,lr_schedule])
     model_plot(model_history)
     # model.load_weights(model_name)
     # loss = model.evaluate(X_test, y_test, verbose=1, steps=X_test.shape[0]) # Evaluate the model
@@ -766,28 +783,28 @@ def xgboost_model(X_train, X_test, y_train, y_test):
 
 if __name__ == '__main__':
     # creating_synthetic_track_database()
-    data_frame = import_data()
-    vehicle = "vehicle_1099"
-    drawing_track(data_frame, vehicle)
-    df_modified = data_normalization(data_frame)
-    df_modified = group_tracks(df_modified)
-    x,max_route_length = reshape_tracks(df_modified)
-    y = read_y(df_modified)
-    is_balanced_database(df_modified)
-    X_train, X_test, y_train, y_test = encoder(x,y)
+    # data_frame = import_data()
+    # vehicle = "vehicle_1099"
+    # drawing_track(data_frame, vehicle)
+    # df_modified = data_normalization(data_frame)
+    # df_modified = group_tracks(df_modified)
+    # x,max_route_length = reshape_tracks(df_modified)
+    # y = read_y(df_modified)
+    # is_balanced_database(df_modified)
+    # X_train, X_test, y_train, y_test = encoder(x,y)
     # lstm_model1(X_train, X_test, y_train, y_test,max_route_length)
     # lstm_model2(X_train, X_test, y_train, y_test,max_route_length)
     # lstm_model3(X_train, X_test, y_train, y_test,max_route_length)
     # increase the number of data.
-    # data_frame = import_data("big_data_model")
-    # vehicle = "vehicle_1099"
-    # drawing_track(data_frame, vehicle)
-    # df_modified = data_normalization(data_frame,"big_data_model")
-    # df_modified = group_tracks(df_modified,"big_data_model")
-    # x, max_route_length = reshape_tracks(df_modified)
-    # y = read_y(df_modified)
-    # is_balanced_database(df_modified)
-    # X_train, X_test, y_train, y_test = encoder(x, y)
+    data_frame = import_data("big_data_model")
+    vehicle = "vehicle_1099"
+    drawing_track(data_frame, vehicle)
+    df_modified = data_normalization(data_frame,"big_data_model")
+    df_modified = group_tracks(df_modified,"big_data_model")
+    x, max_route_length = reshape_tracks(df_modified)
+    y = read_y(df_modified)
+    is_balanced_database(df_modified)
+    X_train, X_test, y_train, y_test = encoder(x, y)
     # lstm_model4(X_train, X_test, y_train, y_test,max_route_length)
     # lstm_model5(X_train, X_test, y_train, y_test,max_route_length)
     # lstm_model6(X_train, X_test, y_train, y_test,max_route_length)
