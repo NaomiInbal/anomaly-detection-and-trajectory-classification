@@ -709,7 +709,7 @@ if __name__ == '__main__':
     y = read_y(df_modified)
     is_balanced_database(df_modified)
     X_train, X_test, y_train, y_test = encoder(x, y)
-    #xgboost
+    # xgboost
     xgboost_model(X_train, X_test, y_train, y_test)
     # Running the models
     # Base model
