@@ -111,19 +111,19 @@ def creating_synthetic_track_database(tracks_amount):
 
         vehicle_data[f'vehicle_{vehicle_id}'] = has_accident
     # Check if a vehicle has an accident, then update all rows for that vehicle
-    # for vehicle_id, has_accident in vehicle_data.items():
-    #     if has_accident:
-    #         for i in range(len(combined_route_points)):
-    #             if combined_route_points[i][4] == vehicle_id:
-    #                 combined_route_points[i] = (combined_route_points[i][0], combined_route_points[i][1],
-    #                                            combined_route_points[i][2], 1, vehicle_id)
+    for vehicle_id, has_accident in vehicle_data.items():
+        if has_accident:
+            for i in range(len(combined_route_points)):
+                if combined_route_points[i][4] == vehicle_id:
+                    combined_route_points[i] = (combined_route_points[i][0], combined_route_points[i][1],
+                                               combined_route_points[i][2], 1, vehicle_id)
     write_to_csv('vehicle_tracks.csv', combined_route_points)
 
 if __name__ == '__main__':
     small_database = 1500 # A parameter of the amount of tracks for the small database
     big_database = 29127 # A parameter of the amount of tracks for the big database
     creating_synthetic_track_database(small_database)
-    creating_synthetic_track_database(big_database)
+    # creating_synthetic_track_database(big_database)
     vehicle = "vehicle_1099"
     data_frame = main.import_data()
     drawing_track(data_frame, vehicle)
