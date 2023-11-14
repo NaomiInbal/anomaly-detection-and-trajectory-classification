@@ -1,6 +1,5 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-# from xgboost import XGBClassifier
 import numpy as np
 from keras.src.layers import BatchNormalization
 from sklearn.preprocessing import MinMaxScaler
@@ -52,22 +51,6 @@ def import_data(model="model"):
     return df
 
 
-# Drawing a track by ID
-# params: 1. pointer to data frame. 2.Define the vehicle id for which you want to draw the route
-def drawing_track(df, vehicle_id):
-    # Filter the dataframe to keep only the data for the selected vehicle
-    df_vehicle = df[df['vehicle_id'] == vehicle_id]
-    # Extract the local_x and local_y coordinates for the selected vehicle
-    x = df_vehicle['local_x'].tolist()
-    y = df_vehicle['local_y'].tolist()
-    # Plot the route
-    plt.plot(x,y)
-    plt.xlabel("Local X")
-    plt.ylabel("Local Y")
-    plt.title(f"Route of Vehicle {vehicle_id}")
-    plt.show()
-
-
 # Normalize the data according to the equation we learned in the class
 def data_normalization(df_modified, model="model"):
     # Normalize the local_x and local_y columns and add them as new columns in the DataFrame
@@ -77,6 +60,10 @@ def data_normalization(df_modified, model="model"):
         'local_y'].std()
     df_modified['global_time_norm'] = (df_modified['global_time'] - df_modified['global_time'].mean()) / df_modified[
         'global_time'].std()
+    df_modified['velocity_norm'] = (df_modified['velocity'] - df_modified['velocity'].mean()) / df_modified[
+        'velocity'].std()
+    df_modified['acceleration_norm'] = (df_modified['acceleration'] - df_modified['acceleration'].mean()) / df_modified[
+        'acceleration'].std()
     # Write the DataFrame to the same CSV file
     if model == "big_data_model":
         path = "big_tracks_database_modified.csv"
@@ -105,7 +92,9 @@ def group_tracks(df_modified, model="model"):
         "local_x_norm": np.array(x["local_x_norm"]).astype(float).tolist(),
         "local_y_norm": x["local_y_norm"].astype(float).tolist(),
         "global_time_norm": x["global_time_norm"].astype(float).tolist(),
-        "accident": int(x["accident"].all())
+        "accident": int(x["accident"].all()),
+        "velocity_norm": x["velocity_norm"].astype(float).tolist(),
+        "acceleration_norm": x["acceleration_norm"].astype(float).tolist(),
     }))
 
     # Reset the index to remove the multi-level index created by groupby
@@ -123,9 +112,9 @@ def reshape_tracks(df_modified):
     # Define the maximum route length
     max_route_length = 0
 
-    # Loop over each route and store its data in a 3D array
-    for x, y, time in zip(df_modified['local_x_norm'], df_modified['local_y_norm'], df_modified['global_time_norm']):
-        route_data = list(zip(x, y, time))
+    # Loop over each route and store its data in a 5D array
+    for x, y, time,velocity,acceleration in zip(df_modified['local_x_norm'], df_modified['local_y_norm'], df_modified['global_time_norm'],df_modified['velocity_norm'],df_modified['acceleration_norm']):
+        route_data = list(zip(x, y, time,velocity,acceleration))
 
         # Update the maximum route length if needed
         if len(route_data) > max_route_length:
@@ -136,10 +125,10 @@ def reshape_tracks(df_modified):
     # Pad sequences with tuples of zeros to ensure consistent length
     for i in range(len(routes_data)):
         route_data = routes_data[i]
-        padded_data = [(0, 0, 0)] * (max_route_length - len(route_data)) + route_data
+        padded_data = [(0, 0, 0, 0, 0)] * (max_route_length - len(route_data)) + route_data
         routes_data[i] = padded_data
 
-    # Convert the list of 3D arrays into a 3D NumPy array
+    # Convert the list of 5D arrays into a 5D NumPy array
     routes_data = np.array(routes_data)
     return routes_data, max_route_length
 
@@ -170,7 +159,7 @@ def callbacks_function(name):
     lr_schedule = tf.keras.callbacks.LearningRateScheduler(scheduler, verbose=0)
 
     return lr_schedule
-    
+
     lr_schedule = tf.keras.callbacks.LearningRateScheduler(scheduler, verbose=0)
     return early_stop, monitor, lr_schedule
 
@@ -265,9 +254,6 @@ def encoder(x, y):
     # stratify = y - We will make sure that the training and test sets maintain the original ratio.
     X_train, X_test, y_train, y_test = train_test_split(x, labels_encoded, test_size=0.2,
                                                         random_state=42, stratify=y)
-    print("sum(y)/len(y) = ", sum(labels_encoded) / len(labels_encoded))
-    print("sum(y_train)/len(y_train)= ", sum(y_train) / len(y_train))
-    print("sum(y_test)/len(y_test)= ", sum(y_test) / len(y_test))
     return X_train, X_test, y_train, y_test
 
 
@@ -421,6 +407,7 @@ def lstm_model4(X_train, X_test, y_train, y_test):
     print(f"Precision: {precision}")
     print(f"Recall: {recall}")
 
+
 # ========================================================================================================
 # LSTM - model 5: hidden_layers = 2, total_nodes = 128, initial_learning_rate = 0.001, num_epochs = 100, DataBase -
 # the big DB - "big_data_model.csv", optimizer='adam'
@@ -563,71 +550,10 @@ def lstm_model8(X_train, X_test, y_train, y_test):
     recall = recall_score(y_test, y_pred_binary)
     print(f"Precision: {precision}")
     print(f"Recall: {recall}")
-#===============================================================
-def calculate_next_point(last_x, last_y, angle, distance):
-    c = last_x + 10
-    d = last_y + 10
-    while True:
-        x = last_x + distance * math.cos(angle)
-        y = last_y + distance * math.sin(angle)
-        # Check distance condition
-        if math.sqrt((x - c)**2 + (y - d)**2) <= 5:
-            break
-        else:
-            angle += math.pi / 180  # Increase angle by 1 degree and retry
 
-    return x, y
 
-def calculate_accident_point(last_x, last_y, angle, distance):
-    c = last_x + 10
-    d = last_y + 10
-    while True:
-        x = last_x + distance * math.cos(angle)
-        y = last_y + distance * math.sin(angle)
-        # Check distance condition
-        if (math.sqrt((x - c)**2 + (y - d)**2) > 11) and (y > last_y):
-            break
-        else:
-            angle += math.radians(5)  # Increase angle by 5 degree and retry
+# ===============================================================
 
-    return x, y
-
-def generate_route_points(num_points, distance_increment, noisy_points, has_accident, vehicle_id):
-    route_points = []
-    current_time = int(time.time())
-
-    for i in range(num_points):
-        x = y = i * distance_increment
-        global_time = current_time + i * 10  # Increase timestamp by 10 seconds for each point
-        accident_value = 1 if i in noisy_points else 0  # Set accident column value based on noisy points
-        route_points.append((x, y, global_time, accident_value, vehicle_id))  # Include vehicle_id column
-
-    accident_point = random.choice(noisy_points) if has_accident else -1
-    for random_index in noisy_points:
-        last_x, last_y, _, _, _ = route_points[random_index - 1]  # Ignore vehicle_id column
-        angle = random.uniform(0, math.pi / 4)  # Limit to 45-degree angle
-
-        # Calculate the random noisy point with a 10-meter distance
-        noisy_x, noisy_y = calculate_next_point(last_x, last_y, angle, distance_increment)
-        route_points.insert(random_index, (noisy_x, noisy_y, current_time + random_index * 10,0, vehicle_id))
-
-        # Remove the next point after the noisy point
-        route_points.pop(random_index + 1)
-
-        # Introduce accident in vehicles with 50% probability
-        if has_accident and random_index == accident_point:
-            accident_x, accident_y = calculate_accident_point(last_x, last_y, angle, distance_increment)
-            route_points[accident_point] = (accident_x, accident_y, current_time + accident_point * 10, 1, vehicle_id)
-            print (vehicle_id)
-
-    return route_points
-
-def write_to_csv(filename, data):
-    with open(filename, 'w', newline='') as csvfile:
-        csv_writer = csv.writer(csvfile)
-        csv_writer.writerow(['local_x', 'local_y', 'global_time', 'accident', 'vehicle_id'])
-        for row in data:
-            csv_writer.writerow(row)
 def plot_confusion_matrix(cf_matrix):
     print('Confusion Matrix')
     ax = plt.subplot()
@@ -636,35 +562,11 @@ def plot_confusion_matrix(cf_matrix):
     ax.set_title('Confusion Matrix')
     ax.set_xlabel('Predicted labels')
     ax.set_ylabel('Actual labels')
-    ax.xaxis.set_ticklabels(['Not accident', 'Accident'])
+    ax.xaxis.set_ticklabels(['Not Accident', 'Accident'])
     ax.yaxis.set_ticklabels(['Not accident', 'Accident'])
     plt.show()  # Display the plot
 
-def creating_synthetic_track_database():
-    num_points = 36  # Number of points along the curve
-    distance_increment = 10  # Increment in meters between points
-    num_noisy_points = 20  # Number of noisy points
 
-    # Choose 7 random indices for noisy points
-    noisy_points = random.sample(range(1, num_points - 1), num_noisy_points)
-
-    combined_route_points = []
-
-    vehicle_data = {}  # Dictionary to store vehicle data
-    for vehicle_id in range(1,1500):  # Create 5 different vehicle tracks
-        has_accident = random.random() < 0.2  # 50% probability of having an accident
-        route_points = generate_route_points(num_points, distance_increment, noisy_points, has_accident, f'vehicle_{vehicle_id}')
-        combined_route_points.extend(route_points)
-
-        vehicle_data[f'vehicle_{vehicle_id}'] = has_accident
-    # Check if a vehicle has an accident, then update all rows for that vehicle
-    # for vehicle_id, has_accident in vehicle_data.items():
-    #     if has_accident:
-    #         for i in range(len(combined_route_points)):
-    #             if combined_route_points[i][4] == vehicle_id:
-    #                 combined_route_points[i] = (combined_route_points[i][0], combined_route_points[i][1],
-    #                                            combined_route_points[i][2], 1, vehicle_id)
-    write_to_csv('vehicle_tracks.csv', combined_route_points)
 
 
 def plot_confusion_matrix(cf_matrix):
@@ -678,39 +580,16 @@ def plot_confusion_matrix(cf_matrix):
     ax.xaxis.set_ticklabels(['Not accident', 'Accident'])
     ax.yaxis.set_ticklabels(['Not accident', 'Accident'])
     plt.show()  # Display the plot
-
-
-def xgboost_model(X_train, X_test, y_train, y_test):
-    model = XGBClassifier(n_estimators=100,objective='binary:logistic', missing=1, seed=42,subsample=0.5, learning_rate=0.1, max_depth=4,eval_metric='aucpr', early_stopping_rounds=10,)
-    X_train = X_train.reshape(X_train.shape[0], -1)
-    X_test = X_test.reshape(X_test.shape[0], -1)
-    model.fit(X_train, y_train,verbose=True,
-                    eval_set=[(X_test,y_test)])
-    print(model)
-    y_pred = model.predict(X_test)
-    print("y_test:\n",y_test.flatten())
-    print("y_pred:\n",y_pred)
-    accuracy = accuracy_score(y_test, y_pred)
-    print("Accuracy: %.2f%%" % (accuracy * 100.0))
-    cf_matrix = confusion_matrix(y_test, y_pred)
-    plot_confusion_matrix(cf_matrix)
-    print(classification_report(y_test, y_pred))
-
 
 if __name__ == '__main__':
-    creating_synthetic_track_database()
     # Data preparation
     data_frame = import_data()
-    # vehicle = "vehicle_1099"
-    # drawing_track(data_frame, vehicle)
     df_modified = data_normalization(data_frame)
     df_modified = group_tracks(df_modified)
     x, max_route_length = reshape_tracks(df_modified)
     y = read_y(df_modified)
     is_balanced_database(df_modified)
     X_train, X_test, y_train, y_test = encoder(x, y)
-    # xgboost
-    xgboost_model(X_train, X_test, y_train, y_test)
     # Running the models
     # Base model
     lstm_model1(X_train, X_test, y_train, y_test)
