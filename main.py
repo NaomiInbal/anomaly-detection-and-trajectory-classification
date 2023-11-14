@@ -60,6 +60,10 @@ def data_normalization(df_modified, model="model"):
         'local_y'].std()
     df_modified['global_time_norm'] = (df_modified['global_time'] - df_modified['global_time'].mean()) / df_modified[
         'global_time'].std()
+    df_modified['velocity_norm'] = (df_modified['velocity'] - df_modified['velocity'].mean()) / df_modified[
+        'velocity'].std()
+    df_modified['acceleration_norm'] = (df_modified['acceleration'] - df_modified['acceleration'].mean()) / df_modified[
+        'acceleration'].std()
     # Write the DataFrame to the same CSV file
     if model == "big_data_model":
         path = "big_tracks_database_modified.csv"
@@ -88,7 +92,9 @@ def group_tracks(df_modified, model="model"):
         "local_x_norm": np.array(x["local_x_norm"]).astype(float).tolist(),
         "local_y_norm": x["local_y_norm"].astype(float).tolist(),
         "global_time_norm": x["global_time_norm"].astype(float).tolist(),
-        "accident": int(x["accident"].all())
+        "accident": int(x["accident"].all()),
+        "velocity_norm": x["velocity_norm"].astype(float).tolist(),
+        "acceleration_norm": x["acceleration_norm"].astype(float).tolist(),
     }))
 
     # Reset the index to remove the multi-level index created by groupby
@@ -106,9 +112,9 @@ def reshape_tracks(df_modified):
     # Define the maximum route length
     max_route_length = 0
 
-    # Loop over each route and store its data in a 3D array
-    for x, y, time in zip(df_modified['local_x_norm'], df_modified['local_y_norm'], df_modified['global_time_norm']):
-        route_data = list(zip(x, y, time))
+    # Loop over each route and store its data in a 5D array
+    for x, y, time,velocity,acceleration in zip(df_modified['local_x_norm'], df_modified['local_y_norm'], df_modified['global_time_norm'],df_modified['velocity_norm'],df_modified['acceleration_norm']):
+        route_data = list(zip(x, y, time,velocity,acceleration))
 
         # Update the maximum route length if needed
         if len(route_data) > max_route_length:
@@ -119,10 +125,10 @@ def reshape_tracks(df_modified):
     # Pad sequences with tuples of zeros to ensure consistent length
     for i in range(len(routes_data)):
         route_data = routes_data[i]
-        padded_data = [(0, 0, 0)] * (max_route_length - len(route_data)) + route_data
+        padded_data = [(0, 0, 0, 0, 0)] * (max_route_length - len(route_data)) + route_data
         routes_data[i] = padded_data
 
-    # Convert the list of 3D arrays into a 3D NumPy array
+    # Convert the list of 5D arrays into a 5D NumPy array
     routes_data = np.array(routes_data)
     return routes_data, max_route_length
 
