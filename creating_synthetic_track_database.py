@@ -150,15 +150,17 @@ def creating_synthetic_track_database(tracks_amount):
                 if combined_route_points[i][4] == vehicle_id:
                     combined_route_points[i] = (combined_route_points[i][0], combined_route_points[i][1],
                                                combined_route_points[i][2], 1, vehicle_id, combined_route_points[i][5], combined_route_points[i][6])
-    write_to_csv('vehicle_tracks.csv', combined_route_points)
+    if tracks_amount == 1500:
+        write_to_csv('small_vehicle_tracks_database.csv', combined_route_points)
+    else:
+        write_to_csv('big_vehicle_tracks_database.csv', combined_route_points)
     return accidents_id
 
 if __name__ == '__main__':
     small_database = 1500 # A parameter of the amount of tracks for the small database
     big_database = 29127 # A parameter of the amount of tracks for the big database
     accidents_id = creating_synthetic_track_database(small_database)
-    # creating_synthetic_track_database(big_database)
+    creating_synthetic_track_database(big_database)
     data_frame = main.import_data()
     random_id = random.randint(0,len(accidents_id)-1)  # Increase distance by a random value between 2 and 8 meters in case of an accident
-
     drawing_track(data_frame, accidents_id[0])

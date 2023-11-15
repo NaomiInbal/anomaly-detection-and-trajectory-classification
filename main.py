@@ -38,9 +38,9 @@ def import_data(model="model"):
     # read the tracks from path of csv file . and presents 10 tracks in a table
     pd.options.display.max_columns = 25
     if model == "big_data_model":
-        path = "big_data_model.csv"
+        path = "big_vehicle_tracks_database.csv"
     else:
-        path = "vehicle_tracks.csv"
+        path = "small_vehicle_tracks_database.csv"
     df = pd.read_csv(path)
     # Define the file path and name for the new file
     # Write the DataFrame to a new CSV file
