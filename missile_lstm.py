@@ -29,7 +29,7 @@ from tensorflow.keras.optimizers import Adam
 from keras.optimizers import Adagrad
 from tensorflow.keras.callbacks import EarlyStopping
 
-from main import plot_confusion_matrix
+# from main import plot_confusion_matrix
 
 
 #=================================================================================================================================
@@ -136,7 +136,7 @@ def encoder(x, y):
   # random_state - Selects regular examples for training and testing in all running.
   # stratify = y - We will make sure that the training and test sets maintain the original ratio.
   X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2,
-                                                        random_state=42, stratify=y)
+                                                        random_state=42, stratify=y, shuffle = True)
   return X_train, X_test, y_train, y_test
 #================================================================================================================================
 
@@ -153,12 +153,17 @@ def upload_database():
     # Load each CSV file into a separate DataFrame and append it to the list
     for file in files:
         df = pd.read_csv(os.path.join(data_dir, file))
-        X_list.append(df.drop(columns=['Label']))
-        Y_list.append(df['Label'])
+        X_list.append(df.drop(columns=['Lable']))
+        # Y_list.append(df['Lable']) # insert Y into 2 dimation array
+        Y_list.append(df['Lable'][0])
 
     # Convert the list of arrays to a single NumPy array
     X = np.array(X_list)
     Y = np.array(Y_list)
+
+    print("================",Y)
+    print("================",len(Y))
+
     return X,Y
 
 def lstm_model1(X_train, X_test, y_train, y_test):
@@ -196,7 +201,21 @@ def lstm_model1(X_train, X_test, y_train, y_test):
     print(f"Recall: {recall}")
 
 
+# Define a custom normalization function
+def data_normalization(data):
+    mean = np.mean(data, axis=0)
+    std = np.std(data, axis=0)
+    normalized_data = (data - mean) / (std + 1e-8)  # Add a small epsilon to avoid division by zero
+    return normalized_data
+
+
 if __name__ == '__main__':
     X,Y = upload_database()
-    X_train, X_test, y_train, y_test = encoder(X, Y)
+    X_normalized = data_normalization(X)
+# Inside the 'encoder' function
+    print("Mean of Normalized Data:")
+    print(np.mean(X_normalized))  # Print the mean along each column
+    print("Standard Deviation of Normalized Data:")
+    print(np.std(X_normalized))  # Print the standard deviation along each column
+    X_train, X_test, y_train, y_test = encoder(X_normalized, Y)
     lstm_model1(X_train, X_test, y_train, y_test)
