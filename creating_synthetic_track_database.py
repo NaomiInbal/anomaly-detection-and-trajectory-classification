@@ -26,7 +26,6 @@ def drawing_track(df, vehicle_id):
 
 def calculate_velocity(x1, y1, t1, x2, y2, t2):
     distance = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-    # time_diff = (t2 - t1)
     time_diff = 1 # time_diff = 1 second.
     if time_diff == 0:
         return 0
@@ -35,7 +34,6 @@ def calculate_velocity(x1, y1, t1, x2, y2, t2):
 
 def calculate_acceleration(v1, v2, t1, t2):
     time_diff = (t2 - t1)
-    # time_diff = 1
     if time_diff == 0:
         return 0
     else:
@@ -81,7 +79,6 @@ def generate_route_points(accidents_id,num_points, distance_increment, noisy_poi
     global_time = int(time.time())
     for i in range(num_points):
         x = y = i * distance_increment
-        global_time =  global_time + 1 # Increase timestamp by 1 second for each point
         accident_value = 1 if i in noisy_points else 0  # Set accident column value based on noisy points
         route_points.append((x, y, global_time, accident_value, vehicle_id, 0, 0,0))  # Include vehicle_id column
     accident_point = random.choice(noisy_points) if has_accident else -1
@@ -168,7 +165,7 @@ if __name__ == '__main__':
     small_database = 1500 # A parameter of the amount of tracks for the small database
     big_database = 29127 # A parameter of the amount of tracks for the big database
     accidents_id = creating_synthetic_track_database(small_database)
-    # creating_synthetic_track_database(big_database)
+    creating_synthetic_track_database(big_database)
     data_frame = main.import_data()
     random_id = random.randint(0,len(accidents_id)-1)  # Increase distance by a random value between 2 and 8 meters in case of an accident
     drawing_track(data_frame, accidents_id[0])

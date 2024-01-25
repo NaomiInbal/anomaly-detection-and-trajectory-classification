@@ -62,8 +62,8 @@ def data_normalization(df_modified, model="model"):
         'global_time'].std()
     df_modified['velocity_norm'] = (df_modified['velocity'] - df_modified['velocity'].mean()) / df_modified[
         'velocity'].std()
-    df_modified['acceleration_norm'] = (df_modified['acceleration'] - df_modified['acceleration'].mean()) / df_modified[
-        'acceleration'].std()
+    df_modified['acceleration_norm'] = (df_modified['acceleration'] - df_modified['acceleration'].mean()) / (df_modified[
+        'acceleration'].std() + 1e-7)
     # Write the DataFrame to the same CSV file
     if model == "big_data_model":
         path = "big_tracks_database_modified.csv"
@@ -553,21 +553,6 @@ def lstm_model8(X_train, X_test, y_train, y_test):
 
 
 # ===============================================================
-
-def plot_confusion_matrix(cf_matrix):
-    print('Confusion Matrix')
-    ax = plt.subplot()
-    sns.heatmap(cf_matrix, annot=True, ax=ax, fmt='d', cmap='Blues', cbar=False)
-    # labels, title and ticks
-    ax.set_title('Confusion Matrix')
-    ax.set_xlabel('Predicted labels')
-    ax.set_ylabel('Actual labels')
-    ax.xaxis.set_ticklabels(['Not Accident', 'Accident'])
-    ax.yaxis.set_ticklabels(['Not accident', 'Accident'])
-    plt.show()  # Display the plot
-
-
-
 
 def plot_confusion_matrix(cf_matrix):
     print('Confusion Matrix')
