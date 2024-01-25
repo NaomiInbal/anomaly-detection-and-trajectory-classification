@@ -2,7 +2,7 @@ import csv
 import math
 import random
 import time
-import main
+import LSTM_vehichle_tracks
 from matplotlib import pyplot as plt
 
 # This file creating synthetic track database. Each line in the database represents a point on the route, and a collection of points with the same vehicle ID make up a route.
@@ -161,11 +161,12 @@ def creating_synthetic_track_database(tracks_amount):
         write_to_csv('big_vehicle_tracks_database.csv', combined_route_points)
     return accidents_id
 
+
 if __name__ == '__main__':
     small_database = 1500 # A parameter of the amount of tracks for the small database
     big_database = 29127 # A parameter of the amount of tracks for the big database
     accidents_id = creating_synthetic_track_database(small_database)
     creating_synthetic_track_database(big_database)
-    data_frame = main.import_data()
+    data_frame = LSTM_vehichle_tracks.import_data()
     random_id = random.randint(0,len(accidents_id)-1)  # Increase distance by a random value between 2 and 8 meters in case of an accident
     drawing_track(data_frame, accidents_id[0])
