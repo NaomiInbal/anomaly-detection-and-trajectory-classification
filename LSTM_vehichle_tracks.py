@@ -566,6 +566,7 @@ def plot_confusion_matrix(cf_matrix):
     ax.yaxis.set_ticklabels(['Not accident', 'Accident'])
     plt.show()  # Display the plot
 
+
 if __name__ == '__main__':
     # Data preparation
     data_frame = import_data()

@@ -162,6 +162,7 @@ def creating_synthetic_track_database(tracks_amount):
     return accidents_id
 
 
+
 if __name__ == '__main__':
     small_database = 1500 # A parameter of the amount of tracks for the small database
     big_database = 29127 # A parameter of the amount of tracks for the big database
