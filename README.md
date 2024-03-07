@@ -21,5 +21,5 @@ This project comprises three stages:
    - File: creating_missile_trajectories.ipynb
    - Description: Simulation of missile trajectories and generation of LSTM models. Results are stored in a folder named "missile data" within Google Drive.
 
-**Note:**
-- Running LSTM_models.ipynb automatically generates the "missile data" folder in Google Drive upon confirmation.
+   **Note:**
+   - Running LSTM_models.ipynb automatically generates the "missile data" folder in Google Drive upon confirmation.
