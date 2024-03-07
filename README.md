@@ -1,12 +1,13 @@
-**Project Overview:**
+***Project Overview:***
 
 
 The last branch with the updated filesis : 
+
 This project comprises three stages:
 
 1. **Data Anomaly Generation :**
    - File: Route_classification_anomaly_detection.ipynb
-   - Description: Creation of anomalies within an existing data repository .
+   - Description: Creation of anomalies within an existing data repository.
 
 2. **Vehicle Track Database Creation and LSTM Modeling:**
    - Files:
@@ -19,7 +20,8 @@ This project comprises three stages:
 
 3. **Missile Trajectory Simulation:**
    - File: creating_missile_trajectories.ipynb
+           LSTM_models.ipynb
    - Description: Simulation of missile trajectories and generation of LSTM models. Results are stored in a folder named "missile data" within Google Drive.
    
       **Note:**
-      - Running LSTM_models.ipynb automatically generates the "missile data" folder in Google Drive upon confirmation.
+      - Running creating_missile_trajectories and LSTM_models.ipynb prompts for user confirmation to create files and utilizes Google Drive for data storage..
