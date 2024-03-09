@@ -1,6 +1,6 @@
 **PROJECT OVERVIEW:**
 
-The last branch with the updated filesis : 
+The last branch with the updated files is master.
 
 This project comprises three stages:
 
