@@ -13,9 +13,9 @@ This project comprises three stages:
      - main.py
      - tracks_database.csv
      - tracks_database_modified.csv
-     - xgboost_model.py
+     - xgboost.py
      - creating_synthetic_track_database
-   - Description: Establishment of a database housing vehicle tracks, incorporating both normal and anomalous routes. Various LSTM models are developed for analysis.
+   - Description: Establishment of a database using vehicle tracks, incorporating both normal and anomalous routes. Various LSTM models are developed for analysis.
 
 3. **Missile Trajectory Simulation:**
    - File: creating_missile_trajectories.ipynb , LSTM_models.ipynb
