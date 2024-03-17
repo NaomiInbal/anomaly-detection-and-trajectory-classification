@@ -13,7 +13,6 @@ This project comprises three stages:
      - main.py
      - tracks_database.csv
      - tracks_database_modified.csv
-     - xgboost.py
      - creating_synthetic_track_database
    - Description: Establishment of a database using vehicle tracks, incorporating both normal and anomalous routes. Various LSTM models are developed for analysis.
 
