@@ -17,7 +17,7 @@ This project comprises three stages:
    - Description: Establishment of a database using vehicle tracks, incorporating both normal and anomalous routes. Various LSTM models are developed for analysis.
 
 3. **Missile Trajectory Simulation:**
-   - File: creating_missile_trajectories.ipynb , LSTM_models.ipynb
+   - File: creating_missile_trajectories.ipynb , LSTM_models(1).ipynb
    - Description: Simulation of missile trajectories and generation of LSTM models. Results are stored in a folder named "missile data" within Google Drive.
    
       **Note:**
